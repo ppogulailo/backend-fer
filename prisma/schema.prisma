@@ -1,0 +1,2358 @@
+// ===== SINGLE SOURCE OF TRUTH FOR PRISMA SCHEMA =====
+//
+// This is the ONLY schema file used by Prisma generate/migrate commands.
+// All models, enums, and configurations are consolidated here.
+//
+// Source files merged (historical reference):
+// - schema.prisma (datasource and generator)
+// - account.prisma (User, Profile, Role, Permission models) - merged
+// - application.prisma (Application, Pipeline, Interview models) - merged
+// - candidate.prisma (CandidateProfile, Resume, CoverLetter models) - merged
+// - chat.prisma (ChatConversation, ChatParticipant, ChatMessage models) - merged
+// - company.prisma (Company, Department, CoreValue models) - merged
+// - job.prisma (Job, JobCoreValueKeyword models) - merged
+// - notification.prisma (Notification model) - merged
+// - talent-pool.prisma (TalentPool model) - merged
+// - rbac.prisma (RBAC models and enums) - merged into this file
+
+generator client {
+  provider = "prisma-client-js"
+  // binaryTargets   = ["native", "rhel-openssl-1.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // Prisma CLI v7+ no longer supports datasource `url` in schema files.
+  // Connection URL is configured in `prisma.config.ts` (datasource.url).
+}
+
+// ===== ENUMS =====
+
+enum NotificationType {
+  RECRUITER_NEW_APPLICATION
+  REVIEWER_REQUEST_FEEDBACK
+  INTERVIEW_SCHEDULED
+  INTERVIEW_FEEDBACK_DUE
+  JOB_APPROVAL_REQUEST
+  JOB_APPROVED
+  JOB_REJECTED
+  PIPELINE_MOVED
+  MESSAGE_NEW
+  SYSTEM_ALERT
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  PUSH
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum AccessApplyMode {
+  PER_ROLE
+  PER_JOB_AND_CANDIDATE
+}
+
+enum ApplicationFileType {
+  RESUME
+  COVER_LETTER
+  PORTFOLIO
+  OTHER
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  INTERVIEWED
+  OFFERED
+  REJECTED
+  WITHDRAWN
+  HIRED
+}
+
+enum CandidateCompanyType {
+  SME
+  STARTUP
+  CORPORATION
+}
+
+enum CandidateLevel {
+  JUNIOR
+  MID
+  SENIOR
+}
+
+enum CandidateValuesMatchType {
+  PRE_SHORTLISTED_INSIGHT
+  ADVANCED_FIT_REVIEW
+}
+
+enum CompanySize {
+  SIZE_1_50         @map("1-50")
+  SIZE_51_100       @map("51-100")
+  SIZE_101_500      @map("101-500")
+  SIZE_501_1000     @map("501-1000")
+  SIZE_1001_5000    @map("1001-5000")
+  SIZE_5001_10000   @map("5001-10000")
+  SIZE_10001_50000  @map("10001-50000")
+  SIZE_50001_100000 @map("50001-100000")
+}
+
+enum CompanyType {
+  SME
+  STARTUP
+  CORPORATION
+}
+
+enum DevelopmentStrategy {
+  SKILLS_FIRST
+  CULTURE_FIRST
+}
+
+enum EmploymentType {
+  FREELANCE
+  LONG_TERM
+}
+
+enum ExperienceLevel {
+  JUNIOR
+  MID
+  SENIOR
+}
+
+enum FeedbackVerdict {
+  THUMBS_UP
+  THUMBS_DOWN
+}
+
+enum HiringFocus {
+  BEST_SKILLS_FIT
+  BEST_CULTURE_FIT
+}
+
+enum InterviewCandidateStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  RESCHEDULED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+enum JobLanguage {
+  EN
+  FR
+  ES
+  DE
+}
+
+enum JobStatus {
+  DRAFT
+  LIVE
+  APPROVED
+  REJECTED
+  APPROVAL_PENDING
+  ARCHIVED
+  HIDDEN
+  EXPIRED
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  TEMPORARY
+  INTERNSHIP
+  REMOTE
+}
+
+enum LongTermAlignment {
+  IMMEDIATE_IMPACT
+  GROWTH_POTENTIAL
+}
+
+enum QuestionGroup {
+  PRE_SHORTLIST
+  PRE_INTERVIEW
+}
+
+enum QuestionType {
+  LIKERT
+  OPEN
+}
+
+enum StageType {
+  CUSTOM
+  INITIAL
+  SHORTLIST
+  INTERVIEW
+  OFFER
+  REJECT
+  WITHDRAWN
+}
+
+enum InterviewType {
+  PHONE
+  VIDEO
+  ONSITE
+  TAKE_HOME
+  OTHER
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  NO_SHOW
+  CANCELED
+  RESCHEDULED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  SUSPENDED
+}
+
+enum SubscriptionTier {
+  BASIC
+  PRO
+  CORPORATE
+}
+
+enum TodoStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TodoType {
+  JOB_APPROVAL
+  INTERVIEW_FEEDBACK
+  OFFER_APPROVAL
+}
+
+enum Visibility {
+  VISIBLE_TO_MATCHED_RECRUITER
+  AVAILABLE_UPON_REQUEST
+  PUBLIC
+}
+
+enum WorkArrangement {
+  ON_SITE
+  REMOTE
+  HYBRID
+}
+
+enum CompensationPeriod {
+  YEAR
+  MONTH
+  DAY
+  HOUR
+}
+
+enum TalentSource {
+  IMPORT
+  APPLIED
+  REFERRED
+  OUTBOUND
+  EVENT
+  OTHER
+}
+
+enum TalentStage {
+  NEW
+  CONTACTED
+  ENGAGED
+  INTERVIEWING
+  ON_HOLD
+  DISQUALIFIED
+}
+
+enum TalentPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// RBAC Enums
+// AccessRole: Organization membership roles only
+// Note: CANDIDATE is NOT an AccessRole - candidates are identified via User.type = CANDIDATE
+enum AccessRole {
+  ORG_ADMIN
+  HM
+  RECRUITER
+  REVIEWER
+}
+
+enum FeedbackMoment {
+  T0_POST_INTERVIEW
+  T3_MONTHS
+  T6_MONTHS
+}
+
+enum FeedbackStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+  SKIPPED
+}
+
+enum ReviewerSessionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum UserType {
+  TEAM_MEMBER
+  CANDIDATE
+}
+
+// ===== MODELS =====
+
+// Source: account.prisma
+model User {
+  id       Int    @id @default(autoincrement())
+  email    String @unique @db.Citext
+  password String
+  type     UserType @default(TEAM_MEMBER) // TEAM_MEMBER or CANDIDATE
+
+  emailVerified  Boolean   @default(false)
+  lastLogin      DateTime?
+  isActive       Boolean   @default(true)
+  isLocked       Boolean   @default(false)
+  firstTimeLogin Boolean   @default(true)
+
+  // Profile Information
+  profile Profile?
+
+  resetTokenHash    String?
+  resetTokenExpires DateTime?
+
+  isRoleActive Boolean @default(false)
+
+  // Company Relations
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId Int?
+
+  // Sessions and invitations
+  sessions        UserSession[]
+  sentInvitations CompanyInvitation[]
+
+  roles UserRole[]
+
+  jobsRecruiting Job[] @relation("UserRecruiterJobs")
+
+  // Application relations (createdBy only - candidates use CandidateProfile relation)
+  createdApplications Application[]        @relation("CreatedApplications")
+  pipelineMovements   Pipeline[]           @relation("UserPipelineMovements")
+  applicationChanges  ApplicationHistory[] @relation("UserApplicationChanges")
+  interviews          Interview[]          @relation("UserInterviews")
+  interviewUsers      Interview[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Candidate profile (only for users with type = CANDIDATE)
+  candidateProfile CandidateProfile? @relation("UserCandidateProfile")
+
+  sentJobInvitations JobInvitation[] @relation("UserJobInvitations")
+
+  // Chat relations
+  createdConversations       ChatConversation[]               @relation("UserCreatedConversations")
+  chatParticipants           ChatParticipant[]                @relation("UserChatParticipants")
+  chatMessages               ChatMessage[]                    @relation("UserChatMessages")
+  userPermissions            UserPermission[]
+  assignedTodos              Todo[]                           @relation("TodoAssignedTo")
+  createdTodos               Todo[]                           @relation("TodoCreatedBy")
+  RecruiterCoreValueFeedback RecruiterCoreValueFeedback[]
+  SixMonthEVPFeedback        SixMonthEVPFeedback[]
+  notifications              Notification[]                   @relation("NotificationsRecipient")
+  questionResponses          CandidateQuestionnaireResponse[]
+  Job                        Job[]
+
+  // Application decision tracking
+  ApplicationDecisionLog    ApplicationDecisionLog[]
+  ApplicationOfferConfirmed Application[]            @relation("ApplicationOfferConfirmedBy")
+  ApplicationHireConfirmed  Application[]            @relation("ApplicationHireConfirmedBy")
+
+  // RBAC Relations
+  organizationMemberships  OrganizationMembership[]
+  membershipInvitedBy      OrganizationMembership[]  @relation("MembershipInvitedBy")
+  roleAssignments          MembershipRole[]          @relation("RoleAssignedBy")
+  jobAssignments           JobAssignment[]           @relation("AssignedRecruiter")
+  jobAssignmentsAssignedBy JobAssignment[]           @relation("JobAssignmentAssignedBy")
+  reviewerSessions         ReviewerSession[]         @relation("ReviewerSessions")
+  talentPoolSourcedBy      TalentPoolSource[]        @relation("TalentPoolSourcedBy")
+  recruiterPerformanceLogs RecruiterPerformanceLog[] @relation("RecruiterPerformance")
+
+  // New RBAC relations
+  auditLogs                AuditLog[]                @relation("AuditLogActor")
+  talentPoolsOwner         TalentPool[]              @relation("TalentPoolOwner")
+  talentPoolsAddedBy       TalentPool[]              @relation("TalentPoolAddedBy")
+  talentPoolEntriesOwner   TalentPoolEntry[]         @relation("TalentPoolEntryOwner")
+  talentPoolEntriesAddedBy TalentPoolEntry[]         @relation("TalentPoolEntryAddedBy")
+  internalFeedbackPostInterviewSubmitted InternalFeedbackPostInterview[] @relation("InternalFeedbackSubmittedBy")
+  internalFeedback6MonthClientSubmitted  InternalFeedback6MonthClient[]  @relation("Internal6MonthSubmittedBy")
+  recruiterActivityMetrics RecruiterActivityMetrics[] @relation("RecruiterActivityMetrics")
+
+  @@index([resetTokenHash])
+  @@map("users")
+}
+
+// Source: account.prisma
+model Profile {
+  id Int @id @default(autoincrement())
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @unique
+
+  firstName         String?
+  lastName          String?
+  jobTitle          String?
+  phone             String?
+  profilePicture    String?
+  companyEmail      String?
+  preferredLanguage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+// Source: account.prisma
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  permissions RolePermission[]
+  users       UserRole[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@map("roles")
+}
+
+// Source: account.prisma
+model Permission {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  roles           RolePermission[]
+  userPermissions UserPermission[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@map("permissions")
+}
+
+// Source: account.prisma
+model UserRole {
+  id     Int  @id @default(autoincrement())
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+  role   Role @relation(fields: [roleId], references: [id])
+  roleId Int
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+// Source: account.prisma
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  role         Role       @relation(fields: [roleId], references: [id])
+  roleId       Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  permissionId Int
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// Source: account.prisma
+model UserPermission {
+  id           Int        @id @default(autoincrement())
+  user         User       @relation(fields: [userId], references: [id])
+  userId       Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  permissionId Int
+  isActive     Boolean    @default(true)
+
+  @@unique([userId, permissionId])
+  @@map("user_permissions")
+}
+
+// Source: account.prisma
+model UserSession {
+  id String @id @default(cuid())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  sessionToken String  @unique
+  deviceInfo   Json?
+  ipAddress    String?
+  location     String?
+  userAgent    String?
+
+  isActive     Boolean  @default(true)
+  lastActivity DateTime @default(now())
+  expiresAt    DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+// Source: application.prisma
+model PipelineStage {
+  id                          Int                  @id @default(autoincrement())
+  name                        String
+  description                 String?
+  position                    Int
+  company                     Company?             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId                   Int?
+  job                         Job?                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId                       Int?
+  applications                Application[]
+  isInitialStage              Boolean              @default(false)
+  type                        StageType            @default(CUSTOM)
+  createdAt                   DateTime             @default(now())
+  updatedAt                   DateTime             @updatedAt
+  pipelines                   Pipeline[]
+  applicationHistoriesAsStage ApplicationHistory[] @relation("ApplicationStages")
+  applicationHistoriesTo      ApplicationHistory[] @relation("ToStage")
+  applicationHistoriesFrom    ApplicationHistory[] @relation("FromStage")
+
+  @@unique([companyId, name])
+  @@unique([jobId, name])
+  @@index([jobId, position])
+}
+
+// Source: application.prisma
+model ApplicationFile {
+  id            Int                 @id @default(autoincrement())
+  application   Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId Int
+  type          ApplicationFileType
+  fileUrl       String?
+  resume        Resume?             @relation(fields: [resumeId], references: [id])
+  resumeId      Int?
+  coverLetter   CoverLetter?        @relation(fields: [coverLetterId], references: [id])
+  coverLetterId Int?
+  uploadedAt    DateTime            @default(now())
+}
+
+// Source: application.prisma
+model Application {
+  id                Int               @id @default(autoincrement())
+  candidateProfile  CandidateProfile @relation("CandidateProfileApplications", fields: [candidateProfileId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  candidateProfileId Int              // Canonical candidate identifier: CandidateProfile.id
+  jobId             Int
+  job               Job               @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  companyId         Int
+  company           Company           @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdById       Int?
+  createdBy         User?             @relation("CreatedApplications", fields: [createdById], references: [id], onDelete: SetNull)
+  status      ApplicationStatus @default(SUBMITTED)
+  submittedAt DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  text           String?
+  currentStageId Int?
+  currentStage   PipelineStage? @relation(fields: [currentStageId], references: [id], onDelete: SetNull)
+
+  // Offer / Hire lifecycle (audit-friendly)
+  offerSentAt        DateTime?
+  offerAcceptedAt    DateTime?
+  hiredAt            DateTime?
+  offerConfirmedById Int?
+  offerConfirmedBy   User?     @relation("ApplicationOfferConfirmedBy", fields: [offerConfirmedById], references: [id], onDelete: SetNull)
+  hireConfirmedById  Int?
+  hireConfirmedBy    User?     @relation("ApplicationHireConfirmedBy", fields: [hireConfirmedById], references: [id], onDelete: SetNull)
+
+  decisions                   ApplicationDecisionLog[]
+  files                       ApplicationFile[]
+  pipelines                   Pipeline[]
+  histories                   ApplicationHistory[]
+  interviews                  Interview[]
+  questionnaireResponses      CandidateQuestionnaireResponse[]
+  todos                       Todo[]
+  CandidateValuesMatchSession CandidateValuesMatchSession[]
+
+  // RBAC Relations
+  feedbackTasks FeedbackTask[]
+  internalFeedback6MonthClient InternalFeedback6MonthClient[] @relation("Internal6MonthPlacement")
+  candidateFeedback6Month       CandidateFeedback6Month[]     @relation("Candidate6MonthPlacement")
+
+  // helpful indexes
+  @@index([candidateProfileId])
+  @@index([companyId, jobId, status])
+  @@index([jobId, status, updatedAt])
+  @@index([status, updatedAt])
+  @@index([offerSentAt])
+  @@index([offerAcceptedAt])
+  @@index([hiredAt])
+}
+
+// Immutable audit trail
+model ApplicationDecisionLog {
+  id            Int         @id @default(autoincrement())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId Int
+  action        String // e.g. "OFFER_SENT", "OFFER_ACCEPTED", "HIRED"
+  actor         User?       @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorId       Int?
+  comment       String?     @db.Text
+  timestamp     DateTime    @default(now())
+
+  @@index([applicationId, timestamp])
+  @@index([action, timestamp])
+  @@map("application_decision_logs")
+}
+
+// Source: application.prisma
+model Pipeline {
+  id            Int           @id @default(autoincrement())
+  applicationId Int
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageId       Int
+  stage         PipelineStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  movedById     Int?
+  movedBy       User?         @relation("UserPipelineMovements", fields: [movedById], references: [id], onDelete: SetNull)
+  movedAt       DateTime      @default(now())
+  order         Int?
+  interviews    Interview[] // One pipeline can have many interviews
+
+  @@unique([applicationId, stageId])
+  @@index([applicationId, movedAt])
+  @@index([stageId, movedAt])
+}
+
+// Source: application.prisma
+model ApplicationHistory {
+  id              Int            @id @default(autoincrement())
+  applicationId   Int
+  application     Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromStageId     Int?
+  fromStage       PipelineStage? @relation("FromStage", fields: [fromStageId], references: [id], onDelete: SetNull)
+  toStageId       Int?
+  toStage         PipelineStage? @relation("ToStage", fields: [toStageId], references: [id], onDelete: SetNull)
+  changedById     Int?
+  changedBy       User?          @relation("UserApplicationChanges", fields: [changedById], references: [id], onDelete: SetNull)
+  changedAt       DateTime       @default(now())
+  note            String?
+  PipelineStage   PipelineStage? @relation("ApplicationStages", fields: [pipelineStageId], references: [id])
+  pipelineStageId Int?
+}
+
+// Source: application.prisma
+model Interview {
+  id              Int                       @id @default(autoincrement())
+  applicationId   Int
+  application     Application               @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scheduledById   Int?
+  scheduledBy     User?                     @relation("UserInterviews", fields: [scheduledById], references: [id], onDelete: SetNull)
+  scheduledAt     DateTime
+  type            InterviewType
+  status          InterviewStatus
+  candidateStatus InterviewCandidateStatus?
+  description     String?
+  feedback        String?
+
+  pipelineId Int?
+  pipeline   Pipeline? @relation(fields: [pipelineId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+
+  @@index([applicationId, scheduledAt])
+  @@index([status, scheduledAt])
+  @@index([candidateStatus, scheduledAt])
+}
+
+// Source: candidate.prisma
+// CandidateProfile - Profile data for users with User.type = CANDIDATE
+// Authentication is handled via User model (email, password, sessions)
+model CandidateProfile {
+  id                          Int                          @id @default(autoincrement())
+  user                        User                         @relation("UserCandidateProfile", fields: [userId], references: [id], onDelete: Cascade)
+  userId                      Int                          @unique
+  firstName                   String
+  lastName                    String
+  phone                       String?
+  country                     String?
+  state                       String?
+  jobTitle                    String?
+  profilePicture              String?
+  aboutMe                     String?                      @db.Text
+  contactInfo                 ContactInfo?                 @relation(fields: [contactInfoId], references: [id])
+  contactInfoId               Int?                         @unique
+  professionalProfile         ProfessionalProfile?         @relation(fields: [professionalProfileId], references: [id])
+  professionalProfileId       Int?                         @unique
+  jobPreference               JobPreference?
+  jobPreferenceId             Int?                         @unique
+  profileLinks                ProfileLinks?
+  profileLinksId              Int?                         @unique
+  resumes                     Resume[]
+  coverLetters                CoverLetter[]
+  notificationPreference      NotificationPreference?
+  profileVisibilityPreference ProfileVisibilityPreference?
+  enable2fa                   Boolean                      @default(false)
+  hideMyAccount               Boolean                      @default(false)
+
+  createdAt                  DateTime                      @default(now())
+  updatedAt                  DateTime                      @updatedAt
+  CandidateSignatures        CandidateSignatures?
+  talentPool                 TalentPool[]
+  jobInvitations             JobInvitation[]
+  savedJobs                  CandidateSavedJob[]
+  tagFeedbacks               CandidateTagFeedback[]
+  valuesMatchSessions        CandidateValuesMatchSession[]
+  RecruiterCoreValueFeedback RecruiterCoreValueFeedback[]
+  SixMonthEVPFeedback        SixMonthEVPFeedback[]
+  CandidateEmployerFeedback  CandidateEmployerFeedback[]
+
+  CandidateQuestionnaireSummary CandidateQuestionnaireSummary[]
+
+  // RBAC Relations
+  applications                  Application[]                   @relation("CandidateProfileApplications")
+  candidateJobMvms              CandidateJobMVM[]
+  feedbackTasks                 FeedbackTask[]
+  talentPoolEntries             TalentPoolEntry[]              @relation("TalentPoolEntryCandidate")
+  internalFeedbackPostInterview InternalFeedbackPostInterview[] @relation("InternalFeedbackCandidate")
+  internalFeedback6MonthClient  InternalFeedback6MonthClient[]  @relation("Internal6MonthCandidate")
+  candidateFeedback6Month       CandidateFeedback6Month[]       @relation("Candidate6MonthFeedback")
+}
+
+// Source: candidate.prisma
+model ContactInfo {
+  id                Int              @id @default(autoincrement())
+  email             String           @unique
+  phone             String?
+  linkedin          String?
+  location          String?
+  candidateProfile  CandidateProfile?
+}
+
+// Source: candidate.prisma
+model ProfessionalProfile {
+  id                Int              @id @default(autoincrement())
+  currentTitle      String?
+  resumes           Resume[]
+  coverLetters      CoverLetter[]
+  candidateProfile  CandidateProfile?
+}
+
+// Source: candidate.prisma
+model Resume {
+  id                    Int                  @id @default(autoincrement())
+  url                   String
+  title                 String?
+  uploadedAt            DateTime             @default(now())
+  professionalProfile   ProfessionalProfile? @relation(fields: [professionalProfileId], references: [id])
+  professionalProfileId Int?
+  candidateProfile      CandidateProfile?    @relation(fields: [candidateProfileId], references: [id])
+  candidateProfileId    Int?
+  useForApplication     Boolean              @default(false)
+  ApplicationFile       ApplicationFile[]
+}
+
+// Source: candidate.prisma
+model CoverLetter {
+  id                    Int                  @id @default(autoincrement())
+  content               String?              @db.Text
+  url                   String?
+  title                 String?
+  uploadedAt            DateTime             @default(now())
+  professionalProfile   ProfessionalProfile? @relation(fields: [professionalProfileId], references: [id], onDelete: SetNull)
+  professionalProfileId Int?
+  candidateProfile      CandidateProfile?    @relation(fields: [candidateProfileId], references: [id], onDelete: SetNull)
+  candidateProfileId   Int?
+  useForApplication     Boolean              @default(false)
+  ApplicationFile       ApplicationFile[]
+
+  @@index([candidateProfileId])
+}
+
+// Source: candidate.prisma
+model JobPreference {
+  id                Int              @id @default(autoincrement())
+  preferredRoles    String[]
+  desiredLocations  String[]
+  tags              String[]
+  availability      String?
+  workArrangement   String?
+  salaryExpectation Int?
+  jobType           JobType?
+  visibility        Visibility @default(VISIBLE_TO_MATCHED_RECRUITER)
+  candidateProfile  CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int             @unique
+
+  @@index([candidateProfileId])
+}
+
+// Source: candidate.prisma
+model ProfileLinks {
+  id                Int              @id @default(autoincrement())
+  github            String?
+  behance           String?
+  dribbble          String?
+  personalSite      String?
+  other             String?
+  candidateProfile  CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int             @unique
+
+  @@index([candidateProfileId])
+}
+
+// Source: candidate.prisma
+model NotificationPreference {
+  id                       Int              @id @default(autoincrement())
+  jobAlertUpdates          Boolean          @default(false)
+  interviewCalendarUpdates Boolean          @default(true)
+  customJobSuggestions     Boolean          @default(true)
+  candidateProfile         CandidateProfile @relation(fields: [candidateProfileId], references: [id])
+  candidateProfileId       Int              @unique
+}
+
+// Source: candidate.prisma
+model ProfileVisibilityPreference {
+  id                      Int              @id @default(autoincrement())
+  showProfileToRecruiters Boolean          @default(false)
+  hideContactDetails      Boolean          @default(false)
+  showJobPreferences      Boolean          @default(false)
+  dataDownloadConsent     Boolean          @default(false)
+  candidateProfile        CandidateProfile @relation(fields: [candidateProfileId], references: [id])
+  candidateProfileId      Int              @unique
+}
+
+// Source: candidate.prisma
+model CandidateSignatures {
+  id              Int              @id @default(autoincrement())
+  candidateProfile CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int            @unique
+  twoFactorSecret String?
+  backupCodesHash String[] // store hashes only
+  isVerified      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Source: candidate.prisma
+model CandidateSavedJob {
+  id                Int              @id @default(autoincrement())
+  candidateProfile  CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId       Int
+  createdAt   DateTime  @default(now())
+
+  @@unique([candidateProfileId, jobId])
+}
+
+// Source: candidate.prisma
+model CandidateValuesMatchSession {
+  id                Int                      @id @default(autoincrement())
+  candidateProfile  CandidateProfile         @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int
+  type        CandidateValuesMatchType
+  mvmScore    Float?
+  answers     Json?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  values      CandidateValuesMatch[]
+
+  // Link this MVM session to a specific application (if used in that decision)
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  applicationId Int?
+
+  @@index([candidateProfileId, type, createdAt])
+  @@index([applicationId, createdAt])
+}
+
+// Source: candidate.prisma
+model CandidateValuesMatch {
+  id          Int                         @id @default(autoincrement())
+  session     CandidateValuesMatchSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId   Int
+  coreValue   CoreValue                   @relation(fields: [coreValueId], references: [id], onDelete: Cascade)
+  coreValueId Int
+  weight      Float
+
+  @@unique([sessionId, coreValueId])
+}
+
+// Source: candidate.prisma
+model CandidateQuestion {
+  id                      Int                       @id @default(autoincrement())
+  group                   QuestionGroup
+  roleLevel               CandidateLevel?
+  companyType             CandidateCompanyType
+  type                    QuestionType
+  code                    String                    @unique
+  text                    String
+  evp                     Int[]
+  scaleMin                Int?
+  scaleMax                Int?
+  scaleMinLabel           String?
+  scaleMaxLabel           String?
+  maxWords                Int?
+  order                   Int                       @default(0)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  CandidateQuestionAnswer CandidateQuestionAnswer[]
+
+  @@index([group, roleLevel, companyType, type])
+  @@map("candidate_questions")
+}
+
+// Source: candidate.prisma
+model CandidateQuestionnaireResponse {
+  id            Int                       @id @default(autoincrement())
+  user          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int
+  job           Job                       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId         Int
+  application   Application?              @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  applicationId Int?
+  group         QuestionGroup
+  roleLevel     CandidateLevel?
+  companyType   CandidateCompanyType
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  answers       CandidateQuestionAnswer[]
+
+  @@unique([userId, jobId, group])
+  @@index([jobId, createdAt])
+  @@index([userId, createdAt])
+  @@map("candidate_questionnaire_responses")
+}
+
+// Source: candidate.prisma
+model CandidateQuestionAnswer {
+  id           Int                            @id @default(autoincrement())
+  response     CandidateQuestionnaireResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  responseId   Int
+  question     CandidateQuestion              @relation(fields: [questionCode], references: [code])
+  questionCode String
+  questionType QuestionType
+  likertValue  Int?
+  textValue    String?
+  createdAt    DateTime                       @default(now())
+  updatedAt    DateTime                       @updatedAt
+
+  @@unique([responseId, questionCode])
+  @@map("candidate_question_answers")
+}
+
+// Source: candidate.prisma
+model CandidateQuestionnaireSummary {
+  id                Int              @id @default(autoincrement())
+  candidateProfile  CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int
+  job               Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId             Int
+  preShortlistScore Float?    @default(0)
+  preInterviewScore Float?    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([candidateProfileId, jobId])
+  @@map("candidate_questionnaire_summaries")
+}
+
+// Source: chat.prisma
+model ChatConversation {
+  id            Int       @id @default(autoincrement())
+  isGroup       Boolean   @default(false)
+  title         String?
+  createdBy     User      @relation("UserCreatedConversations", fields: [createdById], references: [id])
+  createdById   Int
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+
+  @@index([lastMessageAt, updatedAt])
+  @@map("chat_conversations")
+}
+
+// Source: chat.prisma
+model ChatParticipant {
+  id             Int              @id @default(autoincrement())
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId Int
+  user           User             @relation("UserChatParticipants", fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int
+  joinedAt       DateTime         @default(now())
+  lastReadAt     DateTime?
+
+  @@index([userId, conversationId])
+  @@index([conversationId, lastReadAt])
+  @@map("chat_participants")
+}
+
+// Source: chat.prisma
+model ChatMessage {
+  id             Int              @id @default(autoincrement())
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId Int
+  sender         User             @relation("UserChatMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId       Int
+  content        String           @db.Text
+  createdAt      DateTime         @default(now())
+  deletedAt      DateTime?
+
+  @@index([conversationId, createdAt])
+  @@index([conversationId, deletedAt, createdAt])
+  @@map("chat_messages")
+}
+
+// Source: company.prisma
+model Company {
+  id           Int          @id @default(autoincrement())
+  name         String
+  industryId   Int?
+  industry     Industry?    @relation(fields: [industryId], references: [id], onDelete: SetNull)
+  location     String?
+  contactEmail String?
+  logoUrl      String?
+  description  String?      @db.Text
+  website      String?
+  size         CompanySize? @default(SIZE_1_50)
+  type         CompanyType? @default(STARTUP)
+
+  // Company configuration
+  coreValues  CompanyCoreValue[]
+  qualities   CompanyQuality[]
+  departments Department[]
+
+  // Relationships
+  jobs           Job[]
+  users          User[]
+  // jobPosts   JobPost[]
+  // candidates Candidate[]
+  talentPool     TalentPool[]
+  jobInvitations JobInvitation[]
+
+  // Settings
+  isActive               Boolean @default(true)
+  isVerified             Boolean @default(false)
+  isHidden               Boolean @default(false)
+  profilePictureIsHidden Boolean @default(false)
+
+  // Subscription and billing
+  subscriptionTier   SubscriptionTier   @default(BASIC)
+  subscriptionStatus SubscriptionStatus @default(ACTIVE)
+  billingEmail       String?
+
+  // Security settings
+  twoFactorEnabled Boolean @default(false)
+  sessionTimeout   Int     @default(30) // minutes
+
+  // Notification preferences
+  notificationSettings CompanyNotificationSettings?
+
+  CompanyInvitation     CompanyInvitation[]
+  CompanyMatchingWeight CompanyMatchingWeight[]
+  scoreThresholds       ScoreThreshold[]
+
+  // Application relation
+  applications Application[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  PipelineStage PipelineStage[]
+  todos         Todo[]
+
+  // Access policy (row-level visibility settings)
+  accessPolicy CompanyAccessPolicy?
+  Notification Notification[]
+
+  // RBAC Relations
+  organizationMemberships OrganizationMembership[]
+  organizationQuotaUsage  OrganizationQuotaUsage[]
+  jobAssignments          JobAssignment[]
+  candidateJobMvms        CandidateJobMVM[]
+  jobStats                JobStats[]
+  feedbackTasks           FeedbackTask[]
+  reviewerSessions        ReviewerSession[]
+  recruiterPerformanceLogs RecruiterPerformanceLog[]
+
+  // New RBAC relations
+  auditLogs                AuditLog[]                @relation("AuditLogCompany")
+  talentPoolEntries       TalentPoolEntry[]          @relation("TalentPoolEntryCompany")
+  internalFeedbackPostInterview InternalFeedbackPostInterview[] @relation("InternalFeedbackCompany")
+  internalFeedback6MonthClient  InternalFeedback6MonthClient[]  @relation("Internal6MonthCompany")
+  recruiterActivityMetrics     RecruiterActivityMetrics[]       @relation("RecruiterActivityMetricsCompany")
+
+  @@index([industryId])
+  @@map("companies")
+}
+
+// Source: company.prisma
+model Department {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String? @db.Text
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int
+
+  // Core values can be set per department
+  coreValues  CompanyCoreValue[]
+  qualities   CompanyQuality[]
+  jobs        Job[]
+  invitations CompanyInvitation[]
+
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  CompanyMatchingWeight CompanyMatchingWeight[]
+
+  // RBAC Relations
+  membershipRoles MembershipRole[]
+
+  @@unique([companyId, name])
+  @@map("departments")
+}
+
+// Source: company.prisma
+model CoreValue {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String? @db.Text
+  category    String? // e.g., "Mission", "Growth", "Experience", "Performance", "Culture"
+  isActive    Boolean @default(true)
+
+  // Relationships
+  companyCoreValues      CompanyCoreValue[]
+  jobCoreValueKeywords   JobCoreValueKeyword[]
+  jobCoreValueWeightings JobCoreValueWeighting[]
+  jobBenchmarkCoreValues JobBenchmarkCoreValue[]
+  candidateValuesMatches CandidateValuesMatch[]
+
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  RecruiterCoreValueRating RecruiterCoreValueRating[]
+  SixMonthEVPRating        SixMonthEVPRating[]
+
+  @@map("core_values")
+}
+
+// Source: company.prisma
+model Quality {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String? @db.Text
+  category    String?
+  isActive    Boolean @default(true)
+
+  // Relationships
+  companyQualities      CompanyQuality[]
+  jobBenchmarkQualities JobBenchmarkQuality[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("qualities")
+}
+
+// Source: company.prisma
+model CompanyCoreValue {
+  id Int @id @default(autoincrement())
+
+  company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId    Int
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId Int?
+  coreValue    CoreValue   @relation(fields: [coreValueId], references: [id], onDelete: Cascade)
+  coreValueId  Int
+
+  weight Float @default(20.0) // Percentage weight
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, departmentId, coreValueId])
+  @@map("company_core_values")
+}
+
+// Source: company.prisma
+model CompanyQuality {
+  id Int @id @default(autoincrement())
+
+  company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId    Int
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId Int?
+  quality      Quality     @relation(fields: [qualityId], references: [id], onDelete: Cascade)
+  qualityId    Int
+
+  weight Float @default(20.0) // Percentage weight
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, departmentId, qualityId])
+  @@map("company_qualities")
+}
+
+// Source: company.prisma
+model CompanyMatchingWeight {
+  id Int @id @default(autoincrement())
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int
+
+  // Weight categories
+  coreValuesWeight       Float @default(30.0) // Company Core Values weight
+  hardSkillsWeight       Float @default(40.0) // Hard Skills weight
+  benchmarkProfileWeight Float @default(30.0) // Benchmark Profile weight
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  Department   Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId Int?
+
+  @@unique([companyId, departmentId])
+  @@index([companyId])
+  @@index([departmentId])
+  @@map("company_matching_weights")
+}
+
+// Source: company.prisma
+model MatchingWeight {
+  id                     Int      @id @default(autoincrement())
+  coreValuesWeight       Float    @default(30.0)
+  hardSkillsWeight       Float    @default(40.0)
+  benchmarkProfileWeight Float    @default(30.0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+// Source: company.prisma
+model CompanyNotificationSettings {
+  id Int @id @default(autoincrement())
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int     @unique
+
+  // Candidate Activity
+  candidateApplies     NotificationChannel @default(IN_APP)
+  candidateResponds    NotificationChannel @default(IN_APP)
+  hiringManagerComment NotificationChannel @default(IN_APP)
+
+  // Communication Activity
+  newMessage         NotificationChannel @default(IN_APP)
+  mentionsInComments NotificationChannel @default(IN_APP)
+
+  // Team Activity
+  jobPostApproved   NotificationChannel @default(IN_APP)
+  recruiterAssigned NotificationChannel @default(IN_APP)
+
+  // System & Account Updates
+  subscriptionChanges NotificationChannel @default(IN_APP)
+  securityAlerts      NotificationChannel @default(IN_APP)
+  productUpdates      NotificationChannel @default(IN_APP)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("company_notification_settings")
+}
+
+// Source: company.prisma
+model BaseNotificationSetting {
+  id           Int                 @id @default(autoincrement())
+  key          String              @unique
+  header       String
+  description  String
+  shortText    String
+  defaultValue NotificationChannel @default(IN_APP)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+}
+
+// Source: company.prisma
+model CompanyInvitation {
+  id String @id @default(cuid())
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int
+
+  email       String @db.Citext
+  role        String // Role name to assign
+  invitedBy   User   @relation(fields: [invitedById], references: [id])
+  invitedById Int
+
+  tokenHash String           @unique
+  status    InvitationStatus @default(PENDING)
+
+  expiresAt  DateTime
+  acceptedAt DateTime?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now())
+  Department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentId Int?
+
+  @@unique([companyId, email])
+  @@index([companyId, status, expiresAt])
+  @@map("company_invitations")
+}
+
+// Source: company.prisma
+model CompanyAccessPolicy {
+  id           Int             @id @default(autoincrement())
+  company      Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId    Int             @unique
+  applyMode    AccessApplyMode @default(PER_ROLE)
+  rolePolicies Json?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@map("company_access_policies")
+}
+
+// Source: company.prisma
+model ScoreThreshold {
+  id         Int            @id @default(autoincrement())
+  company    Company?       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId  Int?
+  level      CandidateLevel
+  ideal      Int
+  acceptable Int
+  disqualify Int?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([companyId, level])
+}
+
+// Source: company.prisma
+model Industry {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  slug        String  @unique
+  description String? @db.Text
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companies Company[]
+
+  @@map("industries")
+}
+
+// Source: job.prisma
+model Job {
+  id                     Int                     @id @default(autoincrement())
+  title                  String
+  experience             ExperienceLevel
+  employmentType         EmploymentType
+  workArrangement        WorkArrangement
+  responsibilities       String[]
+  requirements           String[]
+  niceToHave             String[]
+  perks                  String[]
+  whoYouAre              String[]
+  education              String?
+  location               String?
+  tags                   String[]
+  minSalary              Int?
+  maxSalary              Int?
+  hoursPerWeek           Int?
+  timeToHireDays         Int?
+  status                 JobStatus               @default(DRAFT)
+  department             Department?             @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentId           Int?
+  companySize            CompanySize?
+  companyType            CompanyType?
+  videoUrl               String?
+  recruiterId            Int?
+  recruiter              User?                   @relation("UserRecruiterJobs", fields: [recruiterId], references: [id])
+  applicationClosingDate DateTime?
+  jobNumber              String?
+  companyId              Int
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  JobCoreValueKeyword    JobCoreValueKeyword[]
+  JobCoreValueWeighting  JobCoreValueWeighting[]
+  JobBenchmarkProfile    JobBenchmarkProfile[]
+
+  introduction String?             @db.Text // was String?
+  salary       String? // legacy; prefer min/max + currency + period
+  languages    JobLanguage[] // was JobLanguage?
+  publishedAt  DateTime?
+  archivedAt   DateTime?
+  expiredAt    DateTime?
+  currency     String?
+  period       CompensationPeriod?
+  mvmProfileVersion Int            @default(1) // Tracks job profile version for MVM recalculation
+  isActive     Boolean             @default(true) // For candidate visibility (public jobs)
+
+  company     Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdById Int?
+
+  // Application relation
+  applications                   Application[]
+  PipelineStage                  PipelineStage[]
+  invitations                    JobInvitation[]
+  savedBy                        CandidateSavedJob[]
+  todos                          Todo[]
+  tagFeedbacks                   CandidateTagFeedback[]
+  RecruiterCoreValueFeedback     RecruiterCoreValueFeedback[]
+  SixMonthEVPFeedback            SixMonthEVPFeedback[]
+  CandidateEmployerFeedback      CandidateEmployerFeedback[]
+  CandidateQuestionnaireResponse CandidateQuestionnaireResponse[]
+
+  CandidateQuestionnaireSummary CandidateQuestionnaireSummary[]
+
+  // RBAC Relations
+  jobAssignments     JobAssignment[]
+  candidateJobMvms   CandidateJobMVM[]
+  jobStats           JobStats?
+  feedbackTasks      FeedbackTask[]
+  reviewerSessions   ReviewerSession[]
+  recruiterPerformanceLogs RecruiterPerformanceLog[]
+
+  // New RBAC relations
+  internalFeedbackPostInterview InternalFeedbackPostInterview[] @relation("InternalFeedbackJob")
+
+  // indexes/uniques helpful for queries
+  @@unique([companyId, jobNumber])
+  @@index([companyId, status, updatedAt])
+  @@index([departmentId, status, updatedAt])
+  @@index([applicationClosingDate])
+  @@index([isActive, status])
+}
+
+// Source: job.prisma
+model JobCoreValueKeyword {
+  id          Int       @id @default(autoincrement())
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId       Int
+  coreValue   CoreValue @relation(fields: [coreValueId], references: [id])
+  coreValueId Int
+  keyword     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([jobId, coreValueId, keyword])
+  @@index([jobId])
+  @@index([coreValueId])
+}
+
+// Source: job.prisma
+model JobCoreValueWeighting {
+  id          Int       @id @default(autoincrement())
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId       Int
+  coreValue   CoreValue @relation(fields: [coreValueId], references: [id])
+  coreValueId Int
+  weight      Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([jobId, coreValueId])
+}
+
+// Source: job.prisma
+model JobBenchmarkProfile {
+  id            Int                        @id @default(autoincrement())
+  job           Job                        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId         Int
+  jobPostRole   String
+  benchmarkRole String?
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+  coreValues    JobBenchmarkCoreValue[]
+  teamStyleTags JobBenchmarkTeamStyleTag[]
+  fitPriority   JobBenchmarkFitPriority?
+  qualities     JobBenchmarkQuality[]
+}
+
+// Source: job.prisma
+model JobBenchmarkCoreValue {
+  id          Int                 @id @default(autoincrement())
+  benchmark   JobBenchmarkProfile @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
+  benchmarkId Int
+  coreValue   CoreValue           @relation(fields: [coreValueId], references: [id])
+  coreValueId Int
+  weight      Float
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([benchmarkId, coreValueId])
+}
+
+// Source: job.prisma
+model JobBenchmarkTeamStyleTag {
+  id          Int                 @id @default(autoincrement())
+  benchmark   JobBenchmarkProfile @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
+  benchmarkId Int
+  tag         String
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+// Source: job.prisma
+model TeamStyleTag {
+  id           Int                    @id @default(autoincrement())
+  name         String                 @unique
+  slug         String                 @unique
+  isActive     Boolean                @default(true)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  tagFeedbacks CandidateTagFeedback[]
+}
+
+// Source: job.prisma
+model CandidateTagFeedback {
+  id                Int              @id @default(autoincrement())
+  candidateProfile  CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int
+
+  job   Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId Int
+
+  teamStyleTag   TeamStyleTag @relation(fields: [teamStyleTagId], references: [id])
+  teamStyleTagId Int
+
+  rating       Int
+  feedbackText String?         @db.Text
+  verdict      FeedbackVerdict
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([candidateProfileId, jobId, teamStyleTagId])
+  @@index([candidateProfileId])
+  @@index([jobId])
+}
+
+// Source: job.prisma
+model RecruiterCoreValueFeedback {
+  id Int @id @default(autoincrement())
+
+  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int
+
+  job   Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId Int
+
+  reviewer   User @relation(fields: [reviewerId], references: [id])
+  reviewerId Int
+
+  recommend Boolean
+  comment   String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ratings RecruiterCoreValueRating[]
+
+  // RBAC Relations
+  feedbackTask FeedbackTask?
+
+  @@unique([candidateProfileId, jobId, reviewerId])
+  @@index([candidateProfileId])
+  @@index([jobId])
+}
+
+// Source: job.prisma
+model RecruiterCoreValueRating {
+  id          Int                        @id @default(autoincrement())
+  feedback    RecruiterCoreValueFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedbackId  Int
+  coreValue   CoreValue                  @relation(fields: [coreValueId], references: [id])
+  coreValueId Int
+  rating      Int
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+
+  @@unique([feedbackId, coreValueId])
+}
+
+// Source: job.prisma
+model SixMonthEVPFeedback {
+  id Int @id @default(autoincrement())
+
+  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int
+
+  job   Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId Int
+
+  reviewer   User @relation(fields: [reviewerId], references: [id])
+  reviewerId Int
+
+  comment String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ratings SixMonthEVPRating[]
+
+  // RBAC Relations
+  feedbackTask FeedbackTask?
+
+  @@unique([candidateProfileId, jobId, reviewerId])
+  @@index([candidateProfileId])
+  @@index([jobId])
+}
+
+// Source: job.prisma
+model SixMonthEVPRating {
+  id          Int                 @id @default(autoincrement())
+  feedback    SixMonthEVPFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedbackId  Int
+  coreValue   CoreValue           @relation(fields: [coreValueId], references: [id])
+  coreValueId Int
+  rating      Int
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([feedbackId, coreValueId])
+}
+
+// Source: job.prisma
+model CandidateEmployerFeedback {
+  id                Int              @id @default(autoincrement())
+  candidateProfile  CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int
+
+  job   Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId Int
+
+  // Five-point Likert scale responses (1-5)
+  missionVisionImportance     Int
+  learningGrowthPriority      Int
+  workplaceCultureImportance  Int
+  roleFitStrengths            Int
+  socialCulturalFitImportance Int
+
+  comment String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // RBAC Relations
+  feedbackTask FeedbackTask?
+
+  @@unique([candidateProfileId, jobId])
+  @@index([candidateProfileId])
+  @@index([jobId])
+}
+
+// Source: job.prisma
+model JobBenchmarkFitPriority {
+  id          Int                 @id @default(autoincrement())
+  benchmark   JobBenchmarkProfile @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
+  benchmarkId Int                 @unique
+  hiringFocus HiringFocus
+  devStrategy DevelopmentStrategy
+  longTerm    LongTermAlignment
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+// Source: job.prisma
+model JobBenchmarkQuality {
+  id          Int                 @id @default(autoincrement())
+  benchmark   JobBenchmarkProfile @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
+  benchmarkId Int
+  quality     Quality             @relation(fields: [qualityId], references: [id])
+  qualityId   Int
+  weight      Float
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([benchmarkId, qualityId])
+}
+
+// Source: job.prisma
+model JobInvitation {
+  id Int @id @default(autoincrement())
+
+  // Relations
+  job                Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId              Int
+  company            Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId          Int
+  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int
+  invitedBy   User      @relation("UserJobInvitations", fields: [invitedById], references: [id])
+  invitedById Int
+
+  // Metadata
+  tokenHash  String           @unique // was token: String @unique
+  status     InvitationStatus @default(PENDING)
+  message    String?
+  expiresAt  DateTime?
+  acceptedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([jobId, candidateProfileId])
+  @@index([companyId])
+  @@map("job_invitations")
+}
+
+// Source: job.prisma
+model Todo {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  type        TodoType
+  status      TodoStatus @default(PENDING)
+
+  company       Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId     Int
+  job           Job?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId         Int?
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId Int?
+
+  assignedTo   User? @relation("TodoAssignedTo", fields: [assignedToId], references: [id])
+  assignedToId Int?
+  createdBy    User? @relation("TodoCreatedBy", fields: [createdById], references: [id])
+  createdById  Int?
+
+  dueAt     DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([jobId])
+  @@index([applicationId])
+}
+
+// Source: job.prisma
+model JobTitle {
+  id          Int      @id @default(autoincrement())
+  title       String   @unique
+  searchTitle String
+  createdAt   DateTime @default(now())
+
+  @@index([title])
+  @@index([searchTitle])
+  @@map("job_titles")
+}
+
+// Source: notification.prisma
+model Notification {
+  id Int @id @default(autoincrement())
+
+  // Recipient
+  recipient   User @relation(name: "NotificationsRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId Int
+
+  // Display
+  title String
+  body  String?
+  type  NotificationType
+
+  actionText    String? // e.g. "See Profile", "Give Feedback"
+  actionUrl     String?
+  actionPayload Json?
+
+  // Status
+  isRead     Boolean   @default(false)
+  readAt     DateTime?
+  archivedAt DateTime?
+
+  channel        NotificationChannel        @default(IN_APP)
+  deliveryStatus NotificationDeliveryStatus @default(PENDING)
+  deliveredAt    DateTime?
+  clickedAt      DateTime?
+
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  companyId Int?
+
+  dedupeKey String? @unique
+
+  // deep-links
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([recipientId, isRead])
+  @@index([recipientId, createdAt])
+  @@index([companyId, createdAt])
+  @@index([type, createdAt])
+  @@index([deliveryStatus, createdAt])
+  @@map("notifications")
+}
+
+// Source: talent-pool.prisma
+model TalentPool {
+  id Int @id @default(autoincrement())
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int
+
+  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int
+
+  // Ownership: recruiter who owns this talent pool entry (nullable - null means org-wide/HM view)
+  ownerRecruiter   User? @relation("TalentPoolOwner", fields: [ownerRecruiterId], references: [id], onDelete: SetNull)
+  ownerRecruiterId Int?  // For recruiter-owned pools; null = org-wide pool visible to HM/Admin
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  addedBy   User? @relation("TalentPoolAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
+  addedById Int?  // Who added this entry (may differ from owner)
+
+  source       TalentSource?
+  sourceDetail String?
+  stage        TalentStage?    @default(NEW)
+  priority     TalentPriority? @default(MEDIUM)
+
+  lastContactAt DateTime?
+  nextActionAt  DateTime?
+  note          String?   @db.Text
+  archivedAt    DateTime?
+
+  // RBAC Relations
+  sourceRecord TalentPoolSource?
+
+  @@unique([companyId, candidateProfileId, ownerRecruiterId])
+  @@index([companyId, updatedAt])
+  @@index([companyId, stage, priority])
+  @@index([companyId, lastContactAt])
+  @@index([ownerRecruiterId])
+  @@map("talent_pools")
+}
+
+// ===== RBAC MODELS =====
+// Source: rbac.prisma
+
+// Organization Membership - Multi-tenant membership with roles
+model OrganizationMembership {
+  id             Int       @id @default(autoincrement())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int
+  company        Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId      Int
+
+  // Role assignments for this membership
+  roleAssignments MembershipRole[]
+
+  // Metadata
+  isActive       Boolean   @default(true)
+  joinedAt       DateTime  @default(now())
+  leftAt         DateTime?
+  invitedBy      User?     @relation("MembershipInvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+  invitedById    Int?
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, companyId])
+  @@index([userId])
+  @@index([companyId])
+  @@index([companyId, isActive])
+  @@map("organization_memberships")
+}
+
+// Membership Role Assignment - Links membership to roles
+model MembershipRole {
+  id                    Int                  @id @default(autoincrement())
+  membership            OrganizationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  membershipId          Int
+  role                  AccessRole           @default(RECRUITER)
+
+  // Optional: Department scope for role
+  department            Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentId          Int?
+
+  // Assignment metadata
+  assignedBy            User?                @relation("RoleAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+  assignedById          Int?
+  assignedAt            DateTime              @default(now())
+  isActive              Boolean               @default(true)
+
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  @@unique([membershipId, role, departmentId])
+  @@index([membershipId])
+  @@index([role])
+  @@map("membership_roles")
+}
+
+// Permission - Canonical permissions for RBAC
+model AccessPermission {
+  id              Int                    @id @default(autoincrement())
+  name            String                 @unique // e.g., "job:create", "pipeline:move", "analytics:view"
+  domain          String                 // e.g., "job", "pipeline", "analytics", "talent_pool"
+  action          String                 // e.g., "create", "read", "update", "delete", "approve", "move"
+  description     String?                @db.Text
+
+  // Role permissions mapping
+  rolePermissions RolePermissionMapping[]
+
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@index([domain, action])
+  @@map("access_permissions")
+}
+
+// Role Permission Mapping - Defines which roles have which permissions
+model RolePermissionMapping {
+  id           Int              @id @default(autoincrement())
+  role         AccessRole
+  permission   AccessPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  permissionId Int
+
+  // Optional scope restrictions
+  scopeRestriction String?      // e.g., "own_jobs", "org_wide", "assigned_jobs"
+
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([role, permissionId])
+  @@index([role])
+  @@map("role_permission_mappings")
+}
+
+// Subscription Plan Features - Feature flags and quotas per subscription tier
+model SubscriptionPlanFeature {
+  id                Int             @id @default(autoincrement())
+  tier              SubscriptionTier
+  featureKey        String          // e.g., "team_access_management", "advanced_analytics"
+  featureName       String
+  description       String?         @db.Text
+  isEnabled         Boolean         @default(false)
+
+  // Quota settings (null = unlimited)
+  quotaLimit        Int?            // e.g., max jobs, max candidates
+  quotaPeriod       String?         // e.g., "monthly", "yearly", "lifetime"
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([tier, featureKey])
+  @@index([tier])
+  @@map("subscription_plan_features")
+}
+
+// Organization Quota Usage - Tracks quota consumption per organization
+model OrganizationQuotaUsage {
+  id                Int             @id @default(autoincrement())
+  company           Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId         Int
+  featureKey        String         // References SubscriptionPlanFeature.featureKey
+  currentUsage      Int            @default(0)
+  periodStart       DateTime       @default(now())
+  periodEnd         DateTime?
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([companyId, featureKey, periodStart])
+  @@index([companyId, featureKey])
+  @@map("organization_quota_usage")
+}
+
+// Job Assignment - Links recruiters to jobs (for scope rules)
+model JobAssignment {
+  id            Int       @id @default(autoincrement())
+  job           Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId         Int
+  recruiter     User      @relation("AssignedRecruiter", fields: [recruiterId], references: [id], onDelete: Cascade)
+  recruiterId   Int
+  company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId     Int
+
+  // Assignment metadata
+  assignedBy    User?     @relation("JobAssignmentAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+  assignedById  Int?
+  assignedAt    DateTime  @default(now())
+  isActive      Boolean   @default(true)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([jobId, recruiterId])
+  @@index([recruiterId, isActive])
+  @@index([jobId])
+  @@index([companyId])
+  @@map("job_assignments")
+}
+
+// Candidate Job MVM - MVM scores per candidate-job pair
+model CandidateJobMVM {
+  id                              Int              @id @default(autoincrement())
+  candidateProfile                CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId              Int
+  job                             Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId                           Int
+  company                         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId                       Int
+
+  // MVM Score data
+  score                           Float?
+  lastCalculatedAt                DateTime?
+  jobProfileVersionAtCalculation  Int?      // References job.mvmProfileVersion
+  needsUpdate                     Boolean   @default(false)
+  notifiedAt                      DateTime?
+
+  // Calculation metadata
+  calculationMethod               String?   // e.g., "standard", "weighted"
+  calculationMetadata             Json?     // Store calculation details
+
+  createdAt                       DateTime  @default(now())
+  updatedAt                       DateTime  @updatedAt
+
+  @@unique([candidateProfileId, jobId])
+  @@index([candidateProfileId])
+  @@index([jobId])
+  @@index([companyId])
+  @@index([needsUpdate, lastCalculatedAt])
+  @@map("candidate_job_mvm")
+}
+
+// Job Stats - Aggregated metrics visible to candidates
+model JobStats {
+  id                Int       @id @default(autoincrement())
+  job               Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId             Int       @unique
+  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId         Int
+
+  // Aggregated metrics
+  avgMvmScore       Float?    // Average MVM score across all candidates
+  applicantCount    Int       @default(0) // Total number of applicants
+  shortlistedCount  Int       @default(0)
+  interviewedCount  Int       @default(0)
+  offeredCount      Int       @default(0)
+  hiredCount        Int       @default(0)
+
+  // Calculation metadata
+  lastCalculatedAt  DateTime  @default(now())
+  calculationVersion Int      @default(1)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([lastCalculatedAt])
+  @@map("job_stats")
+}
+
+// Feedback Task - Tracks feedback moments (T0, T+3m, T+6m)
+model FeedbackTask {
+  id                Int              @id @default(autoincrement())
+  candidateProfile  CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int
+  job               Job?            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId             Int?
+  placement         Application?     @relation(fields: [placementId], references: [id], onDelete: Cascade)
+  placementId       Int?            // For post-hire feedback (T+3m, T+6m)
+  company           Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId         Int
+
+  // Feedback moment details
+  moment            FeedbackMoment
+  status            FeedbackStatus  @default(PENDING)
+
+  // Timing
+  dueAt             DateTime
+  completedAt       DateTime?
+  notifiedAt        DateTime?
+
+  // Links to feedback records (legacy)
+  recruiterFeedback RecruiterCoreValueFeedback? @relation(fields: [recruiterFeedbackId], references: [id], onDelete: SetNull)
+  recruiterFeedbackId Int? @unique
+  sixMonthFeedback  SixMonthEVPFeedback?        @relation(fields: [sixMonthFeedbackId], references: [id], onDelete: SetNull)
+  sixMonthFeedbackId Int? @unique
+  candidateFeedback CandidateEmployerFeedback?  @relation(fields: [candidateFeedbackId], references: [id], onDelete: SetNull)
+  candidateFeedbackId Int? @unique
+
+  // New RBAC feedback relations
+  internalFeedbackPostInterview InternalFeedbackPostInterview? @relation("InternalFeedbackTask")
+  internalFeedback6MonthClient  InternalFeedback6MonthClient?  @relation("Internal6MonthFeedbackTask")
+  candidateFeedback6Month       CandidateFeedback6Month?       @relation("Candidate6MonthFeedbackTask")
+
+  // Notification metadata
+  notificationSent  Boolean         @default(false)
+  emailLinkToken    String?         @unique // Secure token for email links
+  emailLinkExpiresAt DateTime?
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([candidateProfileId, jobId, placementId, moment])
+  @@index([companyId, moment, status])
+  @@index([candidateProfileId, status])
+  @@index([dueAt, status])
+  @@index([emailLinkToken])
+  @@map("feedback_tasks")
+}
+
+// Reviewer Session - Magic link sessions for reviewers
+model ReviewerSession {
+  id                String                @id @default(cuid())
+  job               Job                   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId             Int
+  company           Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId         Int
+
+  // Session token (hashed)
+  tokenHash         String                @unique
+
+  // Session metadata
+  status            ReviewerSessionStatus @default(ACTIVE)
+  expiresAt         DateTime
+  lastActivityAt    DateTime              @default(now())
+
+  // Optional: Link to user if reviewer has account
+  reviewer          User?                 @relation("ReviewerSessions", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewerId        Int?
+  reviewerEmail     String?               @db.Citext
+
+  // Access scope
+  allowedStages     StageType[]           // Which pipeline stages reviewer can see
+
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  @@index([jobId, status])
+  @@index([companyId])
+  @@index([tokenHash])
+  @@index([expiresAt, status])
+  @@map("reviewer_sessions")
+}
+
+// Talent Pool Source Tracking - Tracks who sourced/added candidates
+model TalentPoolSource {
+  id                Int         @id @default(autoincrement())
+  talentPool        TalentPool  @relation(fields: [talentPoolId], references: [id], onDelete: Cascade)
+  talentPoolId      Int         @unique
+  sourcedBy         User?       @relation("TalentPoolSourcedBy", fields: [sourcedById], references: [id], onDelete: SetNull)
+  sourcedById      Int?
+  source            TalentSource
+  sourceDetail      String?
+  sourcedAt         DateTime    @default(now())
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([sourcedById])
+  @@map("talent_pool_sources")
+}
+
+// Recruiter Performance Log - Tracks recruiter activity for analytics
+model RecruiterPerformanceLog {
+  id                Int       @id @default(autoincrement())
+  recruiter         User      @relation("RecruiterPerformance", fields: [recruiterId], references: [id], onDelete: Cascade)
+  recruiterId       Int
+  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId         Int
+  job               Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  jobId             Int?
+
+  // Activity type
+  activityType      String    // e.g., "job_created", "candidate_contacted", "pipeline_moved", "interview_scheduled"
+  activityDetails   Json?     // Store activity-specific data
+
+  // Metrics
+  candidatesContacted Int?    @default(0)
+  interviewsScheduled Int?    @default(0)
+  offersSent          Int?    @default(0)
+
+  loggedAt          DateTime  @default(now())
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([recruiterId, loggedAt])
+  @@index([companyId, loggedAt])
+  @@index([jobId, loggedAt])
+  @@index([activityType, loggedAt])
+  @@map("recruiter_performance_logs")
+}
+
+// Audit Log - Comprehensive audit trail for actions and recruiter performance tracking
+model AuditLog {
+  id          Int       @id @default(autoincrement())
+  action      String    // e.g., "job:create", "pipeline:move", "candidate:view", "feedback:submit"
+  entity      String    // e.g., "Job", "Application", "Candidate", "InternalFeedbackPostInterview"
+  entityId    Int?      // ID of the affected entity
+  actor       User      @relation("AuditLogActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+  actorUserId Int
+  company     Company   @relation("AuditLogCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  companyId   Int
+  metadata    Json?     // Additional context (e.g., old values, new values, IP address)
+
+  createdAt   DateTime  @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([companyId, createdAt])
+  @@index([entity, entityId])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+// Talent Pool Entry - Talent pool entries with explicit ownership and company scoping
+model TalentPoolEntry {
+  id                Int              @id @default(autoincrement())
+  candidateProfile  CandidateProfile @relation("TalentPoolEntryCandidate", fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId Int
+  company           Company          @relation("TalentPoolEntryCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  companyId         Int
+  ownerRecruiter    User?       @relation("TalentPoolEntryOwner", fields: [ownerRecruiterId], references: [id], onDelete: SetNull)
+  ownerRecruiterId  Int?        // For recruiter-owned pools
+  addedBy           User        @relation("TalentPoolEntryAddedBy", fields: [addedById], references: [id], onDelete: Cascade)
+  addedById         Int
+  addedAt           DateTime    @default(now())
+  notes             String?     @db.Text
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@unique([candidateProfileId, companyId, ownerRecruiterId])
+  @@index([companyId])
+  @@index([ownerRecruiterId])
+  @@index([candidateProfileId])
+  @@map("talent_pool_entries")
+}
+
+// Internal Feedback Post-Interview - Internal post-interview feedback (HM/Recruiter/Reviewer only)
+model InternalFeedbackPostInterview {
+  id                  Int              @id @default(autoincrement())
+  candidateProfile    CandidateProfile @relation("InternalFeedbackCandidate", fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId  Int
+  job                 Job           @relation("InternalFeedbackJob", fields: [jobId], references: [id], onDelete: Cascade)
+  jobId               Int
+  company             Company       @relation("InternalFeedbackCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  companyId           Int
+  feedbackTask        FeedbackTask  @relation("InternalFeedbackTask", fields: [feedbackTaskId], references: [id], onDelete: Cascade)
+  feedbackTaskId      Int
+  submittedBy         User          @relation("InternalFeedbackSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
+  submittedById       Int
+  submittedAt         DateTime      @default(now())
+
+  // Value ratings (Mission, Growth, Experience, Performance, Culture)
+  valueRatings        Json          // { mission: number, growth: number, experience: number, performance: number, culture: number }
+  feedbackText        String?       @db.Text
+  recommendation      Boolean?     // Yes/No recommendation
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@unique([feedbackTaskId])
+  @@index([candidateProfileId, jobId])
+  @@index([companyId])
+  @@index([submittedById])
+  @@map("internal_feedback_post_interview")
+}
+
+// Internal Feedback 6 Month Client - Internal 6-month client feedback (HM/Recruiter only)
+model InternalFeedback6MonthClient {
+  id                  Int              @id @default(autoincrement())
+  candidateProfile    CandidateProfile @relation("Internal6MonthCandidate", fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId  Int
+  placement           Application  @relation("Internal6MonthPlacement", fields: [placementId], references: [id], onDelete: Cascade)
+  placementId         Int
+  company             Company      @relation("Internal6MonthCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  companyId           Int
+  feedbackTask        FeedbackTask  @relation("Internal6MonthFeedbackTask", fields: [feedbackTaskId], references: [id], onDelete: Cascade)
+  feedbackTaskId      Int
+  submittedBy         User          @relation("Internal6MonthSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
+  submittedById       Int
+  submittedAt         DateTime      @default(now())
+  feedbackText        String?       @db.Text
+  metrics             Json?        // Store performance metrics, satisfaction scores, etc.
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@unique([feedbackTaskId])
+  @@index([candidateProfileId, placementId])
+  @@index([companyId])
+  @@index([submittedById])
+  @@map("internal_feedback_6_month_client")
+}
+
+// Candidate Feedback 6 Month - Candidate 6-month feedback (candidate-only)
+model CandidateFeedback6Month {
+  id                  Int              @id @default(autoincrement())
+  candidateProfile    CandidateProfile @relation("Candidate6MonthFeedback", fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  candidateProfileId  Int
+  placement           Application   @relation("Candidate6MonthPlacement", fields: [placementId], references: [id], onDelete: Cascade)
+  placementId         Int
+  feedbackTask        FeedbackTask  @relation("Candidate6MonthFeedbackTask", fields: [feedbackTaskId], references: [id], onDelete: Cascade)
+  feedbackTaskId      Int
+  submittedAt         DateTime      @default(now())
+  feedbackText        String?       @db.Text
+  experienceRating    Int?          // Rating 1-5 or 1-10
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@unique([feedbackTaskId])
+  @@index([candidateProfileId])
+  @@index([placementId])
+  @@map("candidate_feedback_6_month")
+}
+
+// Recruiter Activity Metrics (Optional - computed from audit_log)
+// Can be computed from audit_log or stored as materialized view
+model RecruiterActivityMetrics {
+  id                  Int       @id @default(autoincrement())
+  recruiter           User      @relation("RecruiterActivityMetrics", fields: [recruiterId], references: [id], onDelete: Cascade)
+  recruiterId         Int
+  company             Company   @relation("RecruiterActivityMetricsCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  companyId           Int
+  periodStart         DateTime
+  periodEnd           DateTime
+
+  // Aggregated metrics
+  jobsCreated         Int       @default(0)
+  candidatesViewed    Int       @default(0)
+  pipelineMoves       Int       @default(0)
+  feedbackSubmitted   Int       @default(0)
+  interviewsScheduled Int       @default(0)
+  offersSent          Int       @default(0)
+  // ... other metrics
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@unique([recruiterId, companyId, periodStart, periodEnd])
+  @@index([recruiterId, periodStart])
+  @@index([companyId, periodStart])
+  @@map("recruiter_activity_metrics")
+}
