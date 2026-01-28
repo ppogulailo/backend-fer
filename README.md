@@ -31,6 +31,75 @@
 $ yarn install
 ```
 
+## How to test Milestone 1 (Organization Context + Permissions Foundation)
+
+### Prerequisites
+
+- **Env vars**:
+  - **`DATABASE_URL`**: Postgres connection string (e.g. `postgresql://postgres:postgres@localhost:5432/deveteria?schema=public`)
+  - **`JWT_SECRET`**: any non-empty string
+- **Postgres** running and reachable at `DATABASE_URL`
+
+### Setup database + seed
+
+```bash
+# install deps
+npm install
+
+# reset + apply migrations (wipes local DB)
+npx prisma migrate reset
+
+# seed (idempotent; safe to re-run)
+npm run db:seed
+```
+
+### Start the API
+
+```bash
+npm run start:dev
+```
+
+### Get a DEV JWT
+
+```bash
+curl -s -X POST "http://localhost:3000/auth/dev-login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user1@example.com"}'
+```
+
+Copy `accessToken` from the response into `TOKEN`.
+
+### Verify org context + permissions
+
+```bash
+# list orgs, see current org + role per org
+curl -s "http://localhost:3000/orgs" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Expected:
+- user is **admin** in **Org A** (current)
+- user is **viewer** in **Org B**
+
+```bash
+# should be 200 in Org A (admin has job:publish)
+curl -i -X POST "http://localhost:3000/jobs/publish" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Now switch to Org B (grab Org B id from `/orgs` response):
+
+```bash
+curl -s -X POST "http://localhost:3000/orgs/<ORG_B_ID>/switch" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+```bash
+# should be 403 in Org B (viewer does NOT have job:publish)
+curl -i -X POST "http://localhost:3000/jobs/publish" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
 ## Compile and run the project
 
 ```bash

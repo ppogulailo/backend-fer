@@ -296,6 +296,7 @@ enum AccessRole {
   HM
   RECRUITER
   REVIEWER
+  VIEWER
 }
 
 enum FeedbackMoment {
@@ -410,6 +411,9 @@ model User {
   internalFeedbackPostInterviewSubmitted InternalFeedbackPostInterview[] @relation("InternalFeedbackSubmittedBy")
   internalFeedback6MonthClientSubmitted  InternalFeedback6MonthClient[]  @relation("Internal6MonthSubmittedBy")
   recruiterActivityMetrics RecruiterActivityMetrics[] @relation("RecruiterActivityMetrics")
+
+  // Organization context (server-side selected org; never trusted from client)
+  currentOrg UserCurrentOrg?
 
   @@index([resetTokenHash])
   @@map("users")
@@ -1109,6 +1113,9 @@ model Company {
   internalFeedbackPostInterview InternalFeedbackPostInterview[] @relation("InternalFeedbackCompany")
   internalFeedback6MonthClient  InternalFeedback6MonthClient[]  @relation("Internal6MonthCompany")
   recruiterActivityMetrics     RecruiterActivityMetrics[]       @relation("RecruiterActivityMetricsCompany")
+
+  // Organization context (server-side selected org; never trusted from client)
+  currentOrgUsers UserCurrentOrg[]
 
   @@index([industryId])
   @@map("companies")
@@ -1882,6 +1889,22 @@ model OrganizationMembership {
   @@index([companyId])
   @@index([companyId, isActive])
   @@map("organization_memberships")
+}
+
+// User Current Organization - stores the server-side selected org for a user
+// (orgId is NEVER trusted from the client; selection is validated via membership)
+model UserCurrentOrg {
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int     @unique
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@map("user_current_orgs")
 }
 
 // Membership Role Assignment - Links membership to roles
