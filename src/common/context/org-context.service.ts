@@ -2,24 +2,8 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { AccessRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RequestUser } from '../../auth/auth.types';
+import { accessRoleToKey } from '../utils/access-role.util';
 import { AuthContext } from './auth-context.types';
-
-function roleKey(role: AccessRole): string {
-  switch (role) {
-    case AccessRole.ORG_ADMIN:
-      return 'admin';
-    case AccessRole.RECRUITER:
-      return 'recruiter';
-    case AccessRole.VIEWER:
-      return 'viewer';
-    case AccessRole.HM:
-      return 'hm';
-    case AccessRole.REVIEWER:
-      return 'reviewer';
-    default:
-      return String(role).toLowerCase();
-  }
-}
 
 @Injectable()
 export class OrgContextService {
@@ -44,7 +28,6 @@ export class OrgContextService {
       if (ctx) return ctx;
     }
 
-    // Fallback: deterministic org = oldest active membership
     const defaultMembership =
       await this.prisma.organizationMembership.findFirst({
         where: { userId: user.userId, isActive: true },
@@ -107,7 +90,7 @@ export class OrgContextService {
       userId: String(user.userId),
       email: user.email,
       currentOrgId: String(membership.companyId),
-      roleKey: roleKey(role),
+      roleKey: accessRoleToKey(role),
       permissions,
     };
   }

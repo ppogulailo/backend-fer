@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import * as bcrypt from 'bcrypt';
 import {
   Prisma,
   PrismaClient,
@@ -7,6 +8,8 @@ import {
   type AccessPermission,
 } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+
+const SALT_ROUNDS = 10;
 
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error('DATABASE_URL environment variable is required but not set');
@@ -105,16 +108,18 @@ async function main() {
     const orgA = await getOrCreateCompany(tx, 'Org A');
     const orgB = await getOrCreateCompany(tx, 'Org B');
 
-    // 4) Dev user
+    // 4) Dev user (password hashed so signin works with password "dev")
+    const devPasswordHash = await bcrypt.hash('dev', SALT_ROUNDS);
     const devUser = await tx.user.upsert({
       where: { email: 'user1@example.com' },
       create: {
         email: 'user1@example.com',
-        password: 'dev',
+        password: devPasswordHash,
         type: UserType.TEAM_MEMBER,
         isActive: true,
       },
       update: {
+        password: devPasswordHash,
         isActive: true,
       },
     });

@@ -2,23 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { AccessRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrgContextService } from '../common/context/org-context.service';
-
-function roleKey(role: AccessRole): string {
-  switch (role) {
-    case AccessRole.ORG_ADMIN:
-      return 'admin';
-    case AccessRole.RECRUITER:
-      return 'recruiter';
-    case AccessRole.VIEWER:
-      return 'viewer';
-    case AccessRole.HM:
-      return 'hm';
-    case AccessRole.REVIEWER:
-      return 'reviewer';
-    default:
-      return String(role).toLowerCase();
-  }
-}
+import { accessRoleToKey } from '../common/utils/access-role.util';
 
 @Injectable()
 export class OrganizationsService {
@@ -48,7 +32,7 @@ export class OrganizationsService {
         orgId: String(m.company.id),
         name: m.company.name,
         isCurrent: m.company.id === currentOrgId,
-        roleKey: roleKey(role),
+        roleKey: accessRoleToKey(role),
       };
     });
   }
