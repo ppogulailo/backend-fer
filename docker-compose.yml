@@ -1,0 +1,51 @@
+# PostgreSQL + NestJS backend with Prisma (migrate + seed on first run)
+# Usage: docker compose up -d
+# Seed runs once after DB is healthy; backend starts after seed completes.
+# Optional: copy env.example to .env and set POSTGRES_PASSWORD, JWT_SECRET, etc.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-appdb}"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  seed:
+    build:
+      context: .
+      target: builder
+    command: sh -c "npx prisma migrate deploy && npm run db:seed"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-appdb}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4000}:4000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-appdb}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      PORT: "4000"
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    # Optional: skip migrate in entrypoint (already done by seed)
+    # env: SKIP_MIGRATE: "1"
+
+volumes:
+  pgdata:
