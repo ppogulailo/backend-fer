@@ -11,6 +11,9 @@ import { PrismaPg } from '@prisma/adapter-pg';
 
 const SALT_ROUNDS = 10;
 
+/** Demo user password (8+ chars to satisfy frontend validation). Use this in ACCEPTANCE_CRITERIA_DEMO.md */
+const DEV_USER_PASSWORD = 'dev12345';
+
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error('DATABASE_URL environment variable is required but not set');
 
@@ -108,8 +111,8 @@ async function main() {
     const orgA = await getOrCreateCompany(tx, 'Org A');
     const orgB = await getOrCreateCompany(tx, 'Org B');
 
-    // 4) Dev user (password hashed so signin works with password "dev")
-    const devPasswordHash = await bcrypt.hash('dev', SALT_ROUNDS);
+    // 4) Dev user (password 8+ chars for frontend validation; signin with DEV_USER_PASSWORD)
+    const devPasswordHash = await bcrypt.hash(DEV_USER_PASSWORD, SALT_ROUNDS);
     const devUser = await tx.user.upsert({
       where: { email: 'user1@example.com' },
       create: {
